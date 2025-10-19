@@ -73,7 +73,7 @@ try {
 Write-Host "✓ Test 5: Classify Newsletter" -ForegroundColor Green
 try {
     $newsletterData = @{
-        emailContent = "Welcome to your weekly tech newsletter! This week's highlights include: new AI developments, cloud computing trends, and startup news. Read more at our website."
+        emailContent = "Welcome to your weekly tech newsletter! This week highlights include: new AI developments, cloud computing trends, and startup news. Read more at our website."
         from = "newsletter@techdigest.com"
         subject = "Your Weekly Tech Digest - October Edition"
     } | ConvertTo-Json
@@ -100,7 +100,8 @@ try {
     Write-Host "Processed Email:" -ForegroundColor Yellow
     Write-Host "Category: $($response.email.category)"
     Write-Host "Summary: $($response.email.summary)"
-    Write-Host "Action Items: $($response.email.actionItems -join ', ')"
+    $actionItems = $response.email.actionItems -join ", "
+    Write-Host "Action Items: $actionItems"
     Write-Host ""
 } catch {
     Write-Host "❌ Failed: $_" -ForegroundColor Red
@@ -150,7 +151,7 @@ try {
 }
 
 # Test 9: Integrated API - Process and Store Email
-Write-Host "✓ Test 9: Integrated API - Process & Store Email" -ForegroundColor Green
+Write-Host "✓ Test 9: Integrated API - Process and Store Email" -ForegroundColor Green
 try {
     $apiEmail = @{
         userId = "testuser"

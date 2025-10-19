@@ -46,6 +46,81 @@ function jsonResponse(data, status = 200) {
 }
 
 export default {
+	/**
+	 * Email handler - receives emails from Cloudflare Email Routing
+	 */
+	async email(message, env, ctx) {
+		try {
+			console.log('Email received:', message.from, '->', message.to);
+			
+			// Extract email data
+			const emailData = {
+				from: message.from,
+				to: message.to,
+				subject: message.headers.get('subject') || '(No subject)',
+				content: await message.raw(),
+				headers: {
+					messageId: message.headers.get('message-id') || '',
+					date: message.headers.get('date') || new Date().toISOString(),
+					contentType: message.headers.get('content-type') || 'text/plain'
+				},
+				rawSize: message.rawSize || 0
+			};
+
+			// Process email with AI
+			const processed = await processEmail(env.AI, emailData);
+			
+			// Determine user from email address (in real app, would have email-to-user mapping)
+			const userId = emailData.to.split('@')[0] || 'default';
+			
+			// Store in user's state
+			const userStateId = env.USER_STATE.idFromName(userId);
+			const userStub = env.USER_STATE.get(userStateId);
+			await userStub.addEmail(processed);
+			
+			console.log(`Email processed and stored for user: ${userId}, category: ${processed.category}`);
+			
+			// Auto-forward non-spam emails (optional)
+			if (!processed.classification.shouldFilter) {
+				await message.forward(emailData.to);
+			}
+			
+		} catch (error) {
+			console.error('Error processing email:', error);
+			// Forward anyway to prevent email loss
+			await message.forward(message.to);
+		}
+	},
+
+	/**
+	 * Scheduled handler - runs daily tasks
+	 */
+	async scheduled(event, env, ctx) {
+		try {
+			console.log('Running scheduled task:', event.cron);
+			
+			// Generate daily digest for all users
+			// In a real app, you'd iterate through user list
+			const testUserId = 'testuser';
+			const userStateId = env.USER_STATE.idFromName(testUserId);
+			const userStub = env.USER_STATE.get(userStateId);
+			
+			// Get unread important emails
+			const emails = await userStub.getEmails({ category: 'important', unreadOnly: true });
+			
+			if (emails.length > 0) {
+				console.log(`Daily digest: ${emails.length} unread important emails for ${testUserId}`);
+				// In real app, send notification or email digest here
+			}
+			
+		} catch (error) {
+			console.error('Error in scheduled task:', error);
+		}
+	},
+
+	/**
+	 * HTTP handler - API endpoints
+	 */
 	async fetch(request, env, ctx) {
 		// Handle CORS preflight
 		if (request.method === 'OPTIONS') {
@@ -287,6 +362,67 @@ export default {
 				});
 			}
 
+			// ==================== EMAIL WORKFLOW TESTS ====================
+			
+			// Test: Simulate Email Reception
+			if (path === '/test/simulate-email' && request.method === 'POST') {
+				const { to, from, subject, content } = await request.json();
+				
+				if (!from || !content) {
+					return jsonResponse({
+						error: 'Bad Request',
+						message: 'from and content are required'
+					}, 400);
+				}
+
+				// Simulate email processing
+				const emailData = {
+					from,
+					to: to || 'inbox@test.com',
+					subject: subject || '(No subject)',
+					content
+				};
+
+				const processed = await processEmail(env.AI, emailData);
+				const userId = emailData.to.split('@')[0] || 'testuser';
+				
+				const userStateId = env.USER_STATE.idFromName(userId);
+				const userStub = env.USER_STATE.get(userStateId);
+				const stored = await userStub.addEmail(processed);
+
+				return jsonResponse({
+					success: true,
+					message: 'Email simulated and processed',
+					userId,
+					email: stored
+				});
+			}
+
+			// Test: Trigger Daily Digest
+			if (path === '/test/daily-digest' && request.method === 'POST') {
+				const { userId = 'testuser' } = await request.json();
+				
+				const userStateId = env.USER_STATE.idFromName(userId);
+				const userStub = env.USER_STATE.get(userStateId);
+				
+				const unreadImportant = await userStub.getEmails({ 
+					category: 'important', 
+					unreadOnly: true 
+				});
+				
+				const stats = await userStub.getStats();
+
+				return jsonResponse({
+					success: true,
+					digest: {
+						userId,
+						unreadImportant: unreadImportant.length,
+						emails: unreadImportant,
+						stats
+					}
+				});
+			}
+
 			// ==================== INTEGRATED API ====================
 			
 			// API: Chat (with email context and history)
@@ -363,6 +499,10 @@ export default {
 						classify: 'POST /test/classify',
 						processEmail: 'POST /test/process-email',
 						aiChat: 'POST /test/ai-chat'
+					},
+					workflow: {
+						simulateEmail: 'POST /test/simulate-email',
+						dailyDigest: 'POST /test/daily-digest'
 					},
 					userState: {
 						create: 'POST /test/user/{userId}',

@@ -33,7 +33,20 @@
 	},
 	"observability": {
 		"enabled": true
+	},
+	"triggers": {
+		"crons": [
+			"0 9 * * *"
+		]
 	}
+	/**
+	 * Email Routing Configuration
+	 * Configure in Cloudflare Dashboard:
+	 * 1. Go to Email Routing
+	 * 2. Add custom address (e.g., inbox@yourdomain.com)
+	 * 3. Set destination to this Worker
+	 * 4. Worker will receive email events via the email() handler
+	 */
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
