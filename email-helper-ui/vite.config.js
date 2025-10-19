@@ -6,16 +6,4 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), cloudflare()],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8787',
-        changeOrigin: true
-      },
-      '/test': {
-        target: 'http://localhost:8787',
-        changeOrigin: true
-      }
-    }
-  }
 })

@@ -1,243 +1,96 @@
 import { useState, useEffect } from 'react';
-import { getEmails, getEmailStats } from '../api/client';
+import { getEmails } from '../api/client';
+import EmailListItem from './EmailListItem';
 
-export default function EmailList({ userId = 'demo' }) {
+export default function EmailList({ category, onSelectEmail }) {
   const [emails, setEmails] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadEmails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [category]);
 
-  const loadEmails = async () => {
-    setLoading(true);
-    setError(null);
+  async function loadEmails() {
     try {
-      const [emailsResult, statsResult] = await Promise.all([
-        getEmails(userId),
-        getEmailStats(userId)
-      ]);
+      setLoading(true);
+      setError(null);
       
-      setEmails(emailsResult.data || []);
-      setStats(statsResult.data || {});
-    } catch (error) {
-      console.error('Failed to load emails:', error);
-      setError(error.message);
+      // Fetch emails from different users based on category
+      // For demo, we'll use 'testuser' and filter client-side
+      const response = await getEmails('testuser');
+      
+      let filtered = response.data || [];
+      
+      // Filter by category
+      if (category !== 'inbox') {
+        filtered = filtered.filter(email => email.category === category);
+      }
+      
+      setEmails(filtered);
+    } catch (err) {
+      console.error('Failed to load emails:', err);
+      setError('Failed to load emails. Is the server running?');
     } finally {
       setLoading(false);
     }
-  };
-
-  const getCategoryColor = (category) => {
-    const colors = {
-      important: '#e74c3c',
-      spam: '#95a5a6',
-      newsletter: '#3498db',
-      promotional: '#9b59b6',
-      social: '#2ecc71',
-      other: '#7f8c8d'
-    };
-    return colors[category] || colors.other;
-  };
-
-  const getCategoryIcon = (category) => {
-    const icons = {
-      important: '⚠️',
-      spam: '🚫',
-      newsletter: '📰',
-      promotional: '🎁',
-      social: '👥',
-      other: '📧'
-    };
-    return icons[category] || icons.other;
-  };
+  }
 
   if (loading) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Loading emails...</div>;
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading emails...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div style={{ 
-        padding: '20px', 
-        textAlign: 'center',
-        backgroundColor: '#fee',
-        border: '1px solid #fcc',
-        borderRadius: '8px',
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
-        <p style={{ color: '#c00', fontWeight: 'bold' }}>Error loading emails</p>
-        <p style={{ color: '#666' }}>{error}</p>
-        <button 
-          onClick={loadEmails}
-          style={{
-            marginTop: '10px',
-            padding: '8px 16px',
-            backgroundColor: '#f38020',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          Retry
-        </button>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="font-semibold">{error}</p>
+          <button 
+            onClick={loadEmails}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (emails.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <svg className="w-24 h-24 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <p className="text-lg font-semibold">No emails yet</p>
+          <p className="text-sm mt-2">Your {category} folder is empty</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      {/* Stats */}
-      {stats && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '12px',
-          marginBottom: '24px'
-        }}>
-          <StatCard label="Total" value={stats.total} color="#3498db" />
-          <StatCard label="Unread" value={stats.unread} color="#e74c3c" />
-          <StatCard label="Important" value={stats.byCategory?.important || 0} color="#f39c12" />
-          <StatCard label="Spam" value={stats.byCategory?.spam || 0} color="#95a5a6" />
-        </div>
-      )}
-
-      {/* Email List */}
-      <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '12px',
-        border: '1px solid #ddd',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          padding: '16px 20px',
-          backgroundColor: '#f8f9fa',
-          borderBottom: '1px solid #ddd',
-          fontWeight: 'bold'
-        }}>
-          Your Emails ({emails.length})
-        </div>
-        
-        {emails.length === 0 ? (
-          <div style={{
-            padding: '40px',
-            textAlign: 'center',
-            color: '#999'
-          }}>
-            No emails yet. Try simulating one!
-          </div>
-        ) : (
-          <div>
-            {emails.map((email, index) => (
-              <EmailItem key={email.id || index} email={email} getCategoryColor={getCategoryColor} getCategoryIcon={getCategoryIcon} />
-            ))}
-          </div>
-        )}
+    <div className="flex-1 overflow-y-auto">
+      <div className="divide-y">
+        {emails.map((email) => (
+          <EmailListItem
+            key={email.id}
+            email={email}
+            onClick={() => onSelectEmail(email)}
+          />
+        ))}
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, color }) {
-  return (
-    <div style={{
-      padding: '16px',
-      backgroundColor: '#fff',
-      border: '1px solid #ddd',
-      borderRadius: '8px',
-      textAlign: 'center'
-    }}>
-      <div style={{ fontSize: '24px', fontWeight: 'bold', color }}>{value}</div>
-      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>{label}</div>
-    </div>
-  );
-}
-
-function EmailItem({ email, getCategoryColor, getCategoryIcon }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div
-      onClick={() => setExpanded(!expanded)}
-      style={{
-        padding: '16px 20px',
-        borderBottom: '1px solid #eee',
-        cursor: 'pointer',
-        backgroundColor: expanded ? '#f8f9fa' : '#fff',
-        transition: 'background-color 0.2s'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-        <span style={{ fontSize: '20px' }}>{getCategoryIcon(email.category)}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-            {email.subject || '(No subject)'}
-          </div>
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-            From: {email.from}
-          </div>
-        </div>
-        <div style={{
-          padding: '4px 12px',
-          borderRadius: '12px',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          color: '#fff',
-          backgroundColor: getCategoryColor(email.category)
-        }}>
-          {email.category}
-        </div>
-      </div>
-
-      {email.summary && (
-        <div style={{
-          fontSize: '13px',
-          color: '#555',
-          marginTop: '8px',
-          fontStyle: 'italic'
-        }}>
-          📝 {email.summary}
-        </div>
-      )}
-
-      {expanded && email.content && (
-        <div style={{
-          marginTop: '12px',
-          padding: '12px',
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          fontSize: '13px',
-          border: '1px solid #ddd'
-        }}>
-          <strong>Full Content:</strong>
-          <p style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>
-            {email.content.substring(0, 500)}
-            {email.content.length > 500 && '...'}
-          </p>
-        </div>
-      )}
-
-      {expanded && email.actionItems && email.actionItems.length > 0 && (
-        <div style={{
-          marginTop: '12px',
-          padding: '12px',
-          backgroundColor: '#fff7e6',
-          borderRadius: '8px',
-          fontSize: '13px'
-        }}>
-          <strong>✅ Action Items:</strong>
-          <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
-            {email.actionItems.map((item, i) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
