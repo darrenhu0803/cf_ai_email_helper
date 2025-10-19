@@ -2,12 +2,17 @@ import { useState, useEffect } from 'react';
 import { getEmails } from '../api/client';
 import EmailListItem from './EmailListItem';
 
+console.log('=== EMAILLIST.JSX LOADING ===');
+
 export default function EmailList({ category, onSelectEmail }) {
+  console.log('=== EMAILLIST RENDERING ===', { category });
+  
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log('=== EMAILLIST useEffect TRIGGERED ===');
     loadEmails();
   }, [category]);
 

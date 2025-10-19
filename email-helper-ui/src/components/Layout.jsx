@@ -4,7 +4,15 @@ import EmailList from './EmailList';
 import ChatPanel from './ChatPanel';
 import EmailDetail from './EmailDetail';
 
+console.log('=== LAYOUT.JSX LOADING ===');
+console.log('Sidebar:', Sidebar);
+console.log('EmailList:', EmailList);
+console.log('ChatPanel:', ChatPanel);
+console.log('EmailDetail:', EmailDetail);
+
 export default function Layout() {
+  console.log('=== LAYOUT COMPONENT RENDERING ===');
+  
   const [selectedCategory, setSelectedCategory] = useState('inbox');
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
