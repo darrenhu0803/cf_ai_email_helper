@@ -1,68 +1,246 @@
 import { DurableObject } from "cloudflare:workers";
+import { UserState } from "./durable-objects/UserState.js";
+import { ChatSession } from "./durable-objects/ChatSession.js";
 
 /**
- * Welcome to Cloudflare Workers! This is your first Durable Objects application.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your Durable Object in action
- * - Run `npm run deploy` to publish your application
- *
- * Learn more at https://developers.cloudflare.com/durable-objects
+ * AI Email Helper Worker
+ * 
+ * Handles email processing, chat interactions, and state management
  */
+
+// Export Durable Objects so Cloudflare can use them
+export { UserState, ChatSession };
 
 /**
- * Env provides a mechanism to reference bindings declared in wrangler.jsonc within JavaScript
- *
- * @typedef {Object} Env
- * @property {DurableObjectNamespace} MY_DURABLE_OBJECT - The Durable Object namespace binding
+ * CORS headers for frontend communication
  */
+const corsHeaders = {
+	'Access-Control-Allow-Origin': '*',
+	'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+	'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 
-/** A Durable Object's behavior is defined in an exported Javascript class */
-export class MyDurableObject extends DurableObject {
-	/**
-	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
-	 * 	`DurableObjectStub::get` for a given identifier (no-op constructors can be omitted)
-	 *
-	 * @param {DurableObjectState} ctx - The interface for interacting with Durable Object state
-	 * @param {Env} env - The interface to reference bindings declared in wrangler.jsonc
-	 */
-	constructor(ctx, env) {
-		super(ctx, env);
-	}
+/**
+ * Handle OPTIONS requests (CORS preflight)
+ */
+function handleOptions() {
+	return new Response(null, {
+		status: 204,
+		headers: corsHeaders
+	});
+}
 
-	/**
-	 * The Durable Object exposes an RPC method sayHello which will be invoked when when a Durable
-	 *  Object instance receives a request from a Worker via the same method invocation on the stub
-	 *
-	 * @param {string} name - The name provided to a Durable Object instance from a Worker
-	 * @returns {Promise<string>} The greeting to be sent back to the Worker
-	 */
-	async sayHello(name) {
-		return `Hello, ${name}!`;
-	}
+/**
+ * Create JSON response with CORS headers
+ */
+function jsonResponse(data, status = 200) {
+	return new Response(JSON.stringify(data), {
+		status,
+		headers: {
+			'Content-Type': 'application/json',
+			...corsHeaders
+		}
+	});
 }
 
 export default {
-	/**
-	 * This is the standard fetch handler for a Cloudflare Worker
-	 *
-	 * @param {Request} request - The request submitted to the Worker from the client
-	 * @param {Env} env - The interface to reference bindings declared in wrangler.jsonc
-	 * @param {ExecutionContext} ctx - The execution context of the Worker
-	 * @returns {Promise<Response>} The response to be sent back to the client
-	 */
 	async fetch(request, env, ctx) {
-		// Create a stub to open a communication channel with the Durable Object
-		// instance named "foo".
-		//
-		// Requests from all Workers to the Durable Object instance named "foo"
-		// will go to a single remote Durable Object instance.
-		const stub = env.MY_DURABLE_OBJECT.getByName("foo");
+		// Handle CORS preflight
+		if (request.method === 'OPTIONS') {
+			return handleOptions();
+		}
 
-		// Call the `sayHello()` RPC method on the stub to invoke the method on
-		// the remote Durable Object instance.
-		const greeting = await stub.sayHello("world");
+		const url = new URL(request.url);
+		const path = url.pathname;
 
-		return new Response(greeting);
+		try {
+			// ==================== HEALTH CHECK ====================
+			if (path === '/' || path === '/health') {
+				return jsonResponse({
+					status: 'healthy',
+					message: 'AI Email Helper Worker is running!',
+					timestamp: new Date().toISOString()
+				});
+			}
+
+			// ==================== USER STATE TESTS ====================
+			
+			// Test: Create/Update User
+			if (path.startsWith('/test/user/') && request.method === 'POST') {
+				const userId = path.split('/').pop();
+				const data = await request.json();
+				
+				const id = env.USER_STATE.idFromName(userId);
+				const stub = env.USER_STATE.get(id);
+				
+				const result = await stub.setUser({ userId, ...data });
+				
+				return jsonResponse({
+					success: true,
+					message: 'User state created/updated',
+					data: result
+				});
+			}
+
+			// Test: Get User State
+			if (path.startsWith('/test/user/') && request.method === 'GET') {
+				const userId = path.split('/').pop();
+				
+				const id = env.USER_STATE.idFromName(userId);
+				const stub = env.USER_STATE.get(id);
+				
+				const state = await stub.getState();
+				
+				return jsonResponse({
+					success: true,
+					data: state
+				});
+			}
+
+			// Test: Add Email
+			if (path.startsWith('/test/user/') && path.includes('/email') && request.method === 'POST') {
+				const userId = path.split('/')[3];
+				const emailData = await request.json();
+				
+				const id = env.USER_STATE.idFromName(userId);
+				const stub = env.USER_STATE.get(id);
+				
+				const email = await stub.addEmail(emailData);
+				
+				return jsonResponse({
+					success: true,
+					message: 'Email added',
+					data: email
+				});
+			}
+
+			// Test: Get Emails
+			if (path.startsWith('/test/user/') && path.includes('/emails') && request.method === 'GET') {
+				const userId = path.split('/')[3];
+				
+				const id = env.USER_STATE.idFromName(userId);
+				const stub = env.USER_STATE.get(id);
+				
+				const emails = await stub.getEmails();
+				
+				return jsonResponse({
+					success: true,
+					count: emails.length,
+					data: emails
+				});
+			}
+
+			// Test: Get User Stats
+			if (path.startsWith('/test/user/') && path.includes('/stats') && request.method === 'GET') {
+				const userId = path.split('/')[3];
+				
+				const id = env.USER_STATE.idFromName(userId);
+				const stub = env.USER_STATE.get(id);
+				
+				const stats = await stub.getStats();
+				
+				return jsonResponse({
+					success: true,
+					data: stats
+				});
+			}
+
+			// ==================== CHAT SESSION TESTS ====================
+			
+			// Test: Initialize Chat Session
+			if (path.startsWith('/test/chat/') && request.method === 'POST' && !path.includes('/message')) {
+				const sessionId = path.split('/')[3];
+				const data = await request.json();
+				
+				const id = env.CHAT_SESSION.idFromName(sessionId);
+				const stub = env.CHAT_SESSION.get(id);
+				
+				const session = await stub.initSession({ sessionId, ...data });
+				
+				return jsonResponse({
+					success: true,
+					message: 'Chat session initialized',
+					data: session
+				});
+			}
+
+			// Test: Add Message to Chat
+			if (path.includes('/message') && request.method === 'POST') {
+				const sessionId = path.split('/')[3];
+				const message = await request.json();
+				
+				const id = env.CHAT_SESSION.idFromName(sessionId);
+				const stub = env.CHAT_SESSION.get(id);
+				
+				const addedMessage = await stub.addMessage(message);
+				
+				return jsonResponse({
+					success: true,
+					message: 'Message added',
+					data: addedMessage
+				});
+			}
+
+			// Test: Get Chat History
+			if (path.startsWith('/test/chat/') && path.includes('/history') && request.method === 'GET') {
+				const sessionId = path.split('/')[3];
+				
+				const id = env.CHAT_SESSION.idFromName(sessionId);
+				const stub = env.CHAT_SESSION.get(id);
+				
+				const session = await stub.getSession();
+				
+				return jsonResponse({
+					success: true,
+					data: session
+				});
+			}
+
+			// Test: Get Recent Messages
+			if (path.startsWith('/test/chat/') && path.includes('/recent') && request.method === 'GET') {
+				const sessionId = path.split('/')[3];
+				const limit = parseInt(url.searchParams.get('limit')) || 10;
+				
+				const id = env.CHAT_SESSION.idFromName(sessionId);
+				const stub = env.CHAT_SESSION.get(id);
+				
+				const messages = await stub.getRecentMessages(limit);
+				
+				return jsonResponse({
+					success: true,
+					count: messages.length,
+					data: messages
+				});
+			}
+
+			// Default 404
+			return jsonResponse({
+				error: 'Not Found',
+				message: `Endpoint ${path} not found`,
+				availableEndpoints: {
+					health: 'GET /',
+					userState: {
+						create: 'POST /test/user/{userId}',
+						get: 'GET /test/user/{userId}',
+						addEmail: 'POST /test/user/{userId}/email',
+						getEmails: 'GET /test/user/{userId}/emails',
+						getStats: 'GET /test/user/{userId}/stats'
+					},
+					chatSession: {
+						init: 'POST /test/chat/{sessionId}',
+						addMessage: 'POST /test/chat/{sessionId}/message',
+						getHistory: 'GET /test/chat/{sessionId}/history',
+						getRecent: 'GET /test/chat/{sessionId}/recent'
+					}
+				}
+			}, 404);
+
+		} catch (error) {
+			return jsonResponse({
+				error: 'Internal Server Error',
+				message: error.message,
+				stack: error.stack
+			}, 500);
+		}
 	},
 };

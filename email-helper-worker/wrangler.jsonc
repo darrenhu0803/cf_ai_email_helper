@@ -10,16 +10,21 @@
 	"migrations": [
 		{
 			"new_sqlite_classes": [
-				"MyDurableObject"
+				"UserState",
+				"ChatSession"
 			],
-			"tag": "v1"
+			"tag": "v2"
 		}
 	],
 	"durable_objects": {
 		"bindings": [
 			{
-				"class_name": "MyDurableObject",
-				"name": "MY_DURABLE_OBJECT"
+				"class_name": "UserState",
+				"name": "USER_STATE"
+			},
+			{
+				"class_name": "ChatSession",
+				"name": "CHAT_SESSION"
 			}
 		]
 	},
