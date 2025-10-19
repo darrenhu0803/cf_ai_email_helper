@@ -21,21 +21,37 @@ export default function EmailList({ category, onSelectEmail }) {
       setLoading(true);
       setError(null);
       
+      console.log('=== LOADING EMAILS ===');
+      
       // Fetch emails from different users based on category
       // For demo, we'll use 'testuser' and filter client-side
       const response = await getEmails('testuser');
       
-      let filtered = response.data || [];
+      console.log('API Response:', response);
+      
+      // Handle response - check if data exists and is an array
+      let emailData = [];
+      if (response && response.data && Array.isArray(response.data)) {
+        emailData = response.data;
+      } else if (response && Array.isArray(response)) {
+        emailData = response;
+      }
+      
+      console.log('Email data:', emailData, 'Length:', emailData.length);
       
       // Filter by category
+      let filtered = emailData;
       if (category !== 'inbox') {
-        filtered = filtered.filter(email => email.category === category);
+        filtered = emailData.filter(email => email.category === category);
       }
+      
+      console.log('Filtered emails:', filtered.length);
       
       setEmails(filtered);
     } catch (err) {
       console.error('Failed to load emails:', err);
       setError('Failed to load emails. Is the server running?');
+      setEmails([]); // Ensure emails is always an array
     } finally {
       setLoading(false);
     }
@@ -88,7 +104,7 @@ export default function EmailList({ category, onSelectEmail }) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="divide-y">
-        {emails.map((email) => (
+        {Array.isArray(emails) && emails.map((email) => (
           <EmailListItem
             key={email.id}
             email={email}
