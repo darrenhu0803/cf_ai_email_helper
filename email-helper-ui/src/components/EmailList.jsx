@@ -5,13 +5,16 @@ export default function EmailList({ userId = 'demo' }) {
   const [emails, setEmails] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadEmails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const loadEmails = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [emailsResult, statsResult] = await Promise.all([
         getEmails(userId),
@@ -22,6 +25,7 @@ export default function EmailList({ userId = 'demo' }) {
       setStats(statsResult.data || {});
     } catch (error) {
       console.error('Failed to load emails:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -53,6 +57,37 @@ export default function EmailList({ userId = 'demo' }) {
 
   if (loading) {
     return <div style={{ padding: '20px', textAlign: 'center' }}>Loading emails...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        padding: '20px', 
+        textAlign: 'center',
+        backgroundColor: '#fee',
+        border: '1px solid #fcc',
+        borderRadius: '8px',
+        maxWidth: '800px',
+        margin: '0 auto'
+      }}>
+        <p style={{ color: '#c00', fontWeight: 'bold' }}>Error loading emails</p>
+        <p style={{ color: '#666' }}>{error}</p>
+        <button 
+          onClick={loadEmails}
+          style={{
+            marginTop: '10px',
+            padding: '8px 16px',
+            backgroundColor: '#f38020',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
