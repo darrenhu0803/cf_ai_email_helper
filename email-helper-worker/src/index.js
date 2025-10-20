@@ -5,6 +5,7 @@ import { summarizeEmail, classifyEmail, generateChatResponse } from "./services/
 import { processEmail } from "./services/email-processor.js";
 import { registerUser, loginUser, verifySession, getSessionToken } from "./services/auth.js";
 import { requireAuth } from "./middleware/auth.js";
+import { getGmailAuthUrl, exchangeGmailCode, storeEmailProvider, getEmailProvider, fetchGmailMessages, getGmailMessage } from "./services/email-oauth.js";
 
 /**
  * AI Email Helper Worker
@@ -520,6 +521,191 @@ export default {
 				response.headers.set('Set-Cookie', `session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
 				
 				return response;
+			}
+
+			// ==================== EMAIL PROVIDER OAUTH ====================
+
+			// API: Start Gmail OAuth
+			if (path === '/api/oauth/gmail/start' && request.method === 'GET') {
+				const sessionToken = getSessionToken(request);
+				
+				if (!sessionToken) {
+					return jsonResponse({
+						success: false,
+						error: 'Not authenticated'
+					}, 401);
+				}
+
+				const verification = await verifySession(env, sessionToken);
+				if (!verification.valid) {
+					return jsonResponse({
+						success: false,
+						error: 'Invalid session'
+					}, 401);
+				}
+
+				// Generate state token with user ID
+				const state = btoa(JSON.stringify({
+					userId: verification.user.id,
+					timestamp: Date.now()
+				}));
+
+				const authUrl = getGmailAuthUrl(state);
+
+				return jsonResponse({
+					success: true,
+					authUrl
+				});
+			}
+
+			// API: Gmail OAuth Callback
+			if (path === '/api/oauth/gmail/callback' && request.method === 'GET') {
+				const url = new URL(request.url);
+				const code = url.searchParams.get('code');
+				const state = url.searchParams.get('state');
+
+				if (!code || !state) {
+					return jsonResponse({
+						success: false,
+						error: 'Missing code or state'
+					}, 400);
+				}
+
+				try {
+					// Decode state to get user ID
+					const stateData = JSON.parse(atob(state));
+					const userId = stateData.userId;
+
+					// Exchange code for tokens
+					const tokenResult = await exchangeGmailCode(code);
+					
+					if (!tokenResult.success) {
+						return jsonResponse({
+							success: false,
+							error: tokenResult.error
+						}, 400);
+					}
+
+					// Store credentials
+					await storeEmailProvider(env, userId, 'gmail', {
+						email: userId, // In production, fetch from Gmail API
+						accessToken: tokenResult.accessToken,
+						refreshToken: tokenResult.refreshToken,
+						expiresIn: tokenResult.expiresIn
+					});
+
+					// Redirect to frontend with success
+					return Response.redirect(`${url.origin}/settings?oauth=success`, 302);
+				} catch (error) {
+					console.error('OAuth callback error:', error);
+					return jsonResponse({
+						success: false,
+						error: 'OAuth callback failed'
+					}, 500);
+				}
+			}
+
+			// API: Get Connected Providers
+			if (path === '/api/email-providers' && request.method === 'GET') {
+				const sessionToken = getSessionToken(request);
+				
+				if (!sessionToken) {
+					return jsonResponse({
+						success: false,
+						error: 'Not authenticated'
+					}, 401);
+				}
+
+				const verification = await verifySession(env, sessionToken);
+				if (!verification.valid) {
+					return jsonResponse({
+						success: false,
+						error: 'Invalid session'
+					}, 401);
+				}
+
+				// Get user state
+				const id = env.USER_STATE.idFromName(verification.user.id);
+				const userState = env.USER_STATE.get(id);
+				const response = await userState.fetch('http://internal/get');
+				const data = await response.json();
+
+				const providers = data.state?.user?.emailProviders || [];
+
+				return jsonResponse({
+					success: true,
+					providers: providers.map(p => ({
+						provider: p.provider,
+						email: p.email,
+						connectedAt: p.connectedAt
+					}))
+				});
+			}
+
+			// API: Sync Gmail
+			if (path === '/api/email-providers/gmail/sync' && request.method === 'POST') {
+				const sessionToken = getSessionToken(request);
+				
+				if (!sessionToken) {
+					return jsonResponse({
+						success: false,
+						error: 'Not authenticated'
+					}, 401);
+				}
+
+				const verification = await verifySession(env, sessionToken);
+				if (!verification.valid) {
+					return jsonResponse({
+						success: false,
+						error: 'Invalid session'
+					}, 401);
+				}
+
+				// Get Gmail credentials
+				const providerResult = await getEmailProvider(env, verification.user.id, 'gmail');
+				
+				if (!providerResult.success) {
+					return jsonResponse({
+						success: false,
+						error: 'Gmail not connected'
+					}, 400);
+				}
+
+				// Fetch messages
+				const messagesResult = await fetchGmailMessages(providerResult.provider.accessToken, {
+					maxResults: 20
+				});
+
+				if (!messagesResult.success) {
+					return jsonResponse({
+						success: false,
+						error: messagesResult.error
+					}, 500);
+				}
+
+				// Process each message
+				const processed = [];
+				for (const msg of messagesResult.messages.slice(0, 5)) { // Process first 5
+					const messageResult = await getGmailMessage(providerResult.provider.accessToken, msg.id);
+					
+					if (messageResult.success) {
+						// Process with AI
+						const processedEmail = await processEmail(env.AI, messageResult.email);
+						
+						// Store in user's state
+						const userStateId = env.USER_STATE.idFromName(verification.user.id);
+						const userStub = env.USER_STATE.get(userStateId);
+						await userStub.addEmail(processedEmail);
+						
+						processed.push(processedEmail);
+					}
+				}
+
+				return jsonResponse({
+					success: true,
+					synced: processed.length,
+					emails: processed
+				});
 			}
 
 			// ==================== INTEGRATED API ====================
