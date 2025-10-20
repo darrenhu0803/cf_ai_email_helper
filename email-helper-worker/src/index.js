@@ -17,28 +17,52 @@ import { getGmailAuthUrl, exchangeGmailCode, storeEmailProvider, getEmailProvide
 export { UserState, ChatSession };
 
 /**
- * CORS headers for frontend communication
+ * Get CORS headers for the request
+ * When credentials are needed, origin must be specific (not *)
  */
-const corsHeaders = {
-	'Access-Control-Allow-Origin': '*',
-	'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+function getCorsHeaders(request) {
+	const origin = request.headers.get('Origin') || 'http://localhost:5173';
+	
+	// Allow localhost on common ports for development
+	const allowedOrigins = [
+		'http://localhost:5173',
+		'http://localhost:3000',
+		'http://localhost:8787',
+		'http://127.0.0.1:5173',
+	];
+	
+	// In production, add your production domain here
+	const isAllowed = allowedOrigins.includes(origin);
+	
+	return {
+		'Access-Control-Allow-Origin': isAllowed ? origin : 'http://localhost:5173',
+		'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+		'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+		'Access-Control-Allow-Credentials': 'true',
+	};
+}
 
 /**
  * Handle OPTIONS requests (CORS preflight)
  */
-function handleOptions() {
+function handleOptions(request) {
 	return new Response(null, {
 		status: 204,
-		headers: corsHeaders
+		headers: getCorsHeaders(request)
 	});
 }
 
 /**
  * Create JSON response with CORS headers
  */
-function jsonResponse(data, status = 200) {
+function jsonResponse(data, status = 200, request = null) {
+	const corsHeaders = request ? getCorsHeaders(request) : {
+		'Access-Control-Allow-Origin': 'http://localhost:5173',
+		'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+		'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+		'Access-Control-Allow-Credentials': 'true',
+	};
+	
 	return new Response(JSON.stringify(data), {
 		status,
 		headers: {
@@ -127,7 +151,7 @@ export default {
 	async fetch(request, env, ctx) {
 		// Handle CORS preflight
 		if (request.method === 'OPTIONS') {
-			return handleOptions();
+			return handleOptions(request);
 		}
 
 		const url = new URL(request.url);
@@ -436,20 +460,20 @@ export default {
 					return jsonResponse({
 						success: false,
 						error: 'Email and password are required'
-					}, 400);
+					}, 400, request);
 				}
 
 				const result = await registerUser(env, email, password, name);
 				
 				if (!result.success) {
-					return jsonResponse(result, 400);
+					return jsonResponse(result, 400, request);
 				}
 
 				// Set cookie
 				const response = jsonResponse({
 					success: true,
 					user: result.user
-				});
+				}, 200, request);
 				
 				response.headers.set('Set-Cookie', `session=${result.sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`);
 				
@@ -464,20 +488,20 @@ export default {
 					return jsonResponse({
 						success: false,
 						error: 'Email and password are required'
-					}, 400);
+					}, 400, request);
 				}
 
 				const result = await loginUser(env, email, password);
 				
 				if (!result.success) {
-					return jsonResponse(result, 401);
+					return jsonResponse(result, 401, request);
 				}
 
 				// Set cookie
 				const response = jsonResponse({
 					success: true,
 					user: result.user
-				});
+				}, 200, request);
 				
 				response.headers.set('Set-Cookie', `session=${result.sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`);
 				
@@ -492,7 +516,7 @@ export default {
 					return jsonResponse({
 						success: false,
 						error: 'Not authenticated'
-					}, 401);
+					}, 401, request);
 				}
 
 				const verification = await verifySession(env, sessionToken);
@@ -501,13 +525,13 @@ export default {
 					return jsonResponse({
 						success: false,
 						error: verification.error
-					}, 401);
+					}, 401, request);
 				}
 
 				return jsonResponse({
 					success: true,
 					user: verification.user
-				});
+				}, 200, request);
 			}
 
 			// API: Logout
@@ -515,7 +539,7 @@ export default {
 				const response = jsonResponse({
 					success: true,
 					message: 'Logged out successfully'
-				});
+				}, 200, request);
 				
 				// Clear cookie
 				response.headers.set('Set-Cookie', `session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
