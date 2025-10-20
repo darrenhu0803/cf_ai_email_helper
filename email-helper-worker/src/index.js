@@ -3,6 +3,8 @@ import { UserState } from "./durable-objects/UserState.js";
 import { ChatSession } from "./durable-objects/ChatSession.js";
 import { summarizeEmail, classifyEmail, generateChatResponse } from "./services/llm.js";
 import { processEmail } from "./services/email-processor.js";
+import { registerUser, loginUser, verifySession, getSessionToken } from "./services/auth.js";
+import { requireAuth } from "./middleware/auth.js";
 
 /**
  * AI Email Helper Worker
@@ -423,9 +425,106 @@ export default {
 				});
 			}
 
+			// ==================== AUTHENTICATION API ====================
+			
+			// API: Register
+			if (path === '/api/auth/register' && request.method === 'POST') {
+				const { email, password, name } = await request.json();
+				
+				if (!email || !password) {
+					return jsonResponse({
+						success: false,
+						error: 'Email and password are required'
+					}, 400);
+				}
+
+				const result = await registerUser(env, email, password, name);
+				
+				if (!result.success) {
+					return jsonResponse(result, 400);
+				}
+
+				// Set cookie
+				const response = jsonResponse({
+					success: true,
+					user: result.user
+				});
+				
+				response.headers.set('Set-Cookie', `session=${result.sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`);
+				
+				return response;
+			}
+
+			// API: Login
+			if (path === '/api/auth/login' && request.method === 'POST') {
+				const { email, password } = await request.json();
+				
+				if (!email || !password) {
+					return jsonResponse({
+						success: false,
+						error: 'Email and password are required'
+					}, 400);
+				}
+
+				const result = await loginUser(env, email, password);
+				
+				if (!result.success) {
+					return jsonResponse(result, 401);
+				}
+
+				// Set cookie
+				const response = jsonResponse({
+					success: true,
+					user: result.user
+				});
+				
+				response.headers.set('Set-Cookie', `session=${result.sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`);
+				
+				return response;
+			}
+
+			// API: Get Current User
+			if (path === '/api/auth/me' && request.method === 'GET') {
+				const sessionToken = getSessionToken(request);
+				
+				if (!sessionToken) {
+					return jsonResponse({
+						success: false,
+						error: 'Not authenticated'
+					}, 401);
+				}
+
+				const verification = await verifySession(env, sessionToken);
+				
+				if (!verification.valid) {
+					return jsonResponse({
+						success: false,
+						error: verification.error
+					}, 401);
+				}
+
+				return jsonResponse({
+					success: true,
+					user: verification.user
+				});
+			}
+
+			// API: Logout
+			if (path === '/api/auth/logout' && request.method === 'POST') {
+				const response = jsonResponse({
+					success: true,
+					message: 'Logged out successfully'
+				});
+				
+				// Clear cookie
+				response.headers.set('Set-Cookie', `session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+				
+				return response;
+			}
+
 			// ==================== INTEGRATED API ====================
 			
-			// API: Chat (with email context and history)
+			// API: Chat (with email context and history) - Protected
 			if (path === '/api/chat' && request.method === 'POST') {
 				const { message, userId, sessionId } = await request.json();
 				

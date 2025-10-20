@@ -21,9 +21,11 @@ export class UserState extends DurableObject {
 			notificationsEnabled: true
 		};
 		const userId = await this.ctx.storage.get('userId');
+		const user = await this.ctx.storage.get('user');
 
 		return {
 			userId,
+			user,
 			emails,
 			preferences,
 			createdAt: await this.ctx.storage.get('createdAt')
@@ -36,9 +38,19 @@ export class UserState extends DurableObject {
 	 * @returns {Promise<Object>} Updated user state
 	 */
 	async setUser(data) {
-		const { userId, preferences } = data;
+		const { userId, user, preferences } = data;
 		
-		await this.ctx.storage.put('userId', userId);
+		if (userId) {
+			await this.ctx.storage.put('userId', userId);
+		}
+		
+		// Store user object (with auth data)
+		if (user) {
+			await this.ctx.storage.put('user', user);
+			if (user.email && !userId) {
+				await this.ctx.storage.put('userId', user.email);
+			}
+		}
 		
 		if (preferences) {
 			await this.ctx.storage.put('preferences', preferences);
