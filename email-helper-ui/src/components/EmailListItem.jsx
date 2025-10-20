@@ -1,82 +1,97 @@
 export default function EmailListItem({ email, onClick }) {
   const categoryColors = {
-    important: 'bg-red-100 text-red-700',
-    spam: 'bg-gray-100 text-gray-700',
-    newsletter: 'bg-blue-100 text-blue-700',
-    promotional: 'bg-green-100 text-green-700',
-    social: 'bg-purple-100 text-purple-700',
-    other: 'bg-gray-100 text-gray-600',
+    important: 'bg-yellow-500/20 text-yellow-300',
+    spam: 'bg-red-500/20 text-red-300',
+    newsletter: 'bg-blue-500/20 text-blue-300',
+    promotional: 'bg-green-500/20 text-green-300',
+    social: 'bg-purple-500/20 text-purple-300',
+    other: 'bg-gray-500/20 text-gray-400',
+  };
+
+  const categoryIcons = {
+    important: '⭐',
+    spam: '⚠️',
+    newsletter: '📰',
+    promotional: '🏷️',
+    social: '👥',
+    other: '📧',
   };
 
   const categoryColor = categoryColors[email.category] || categoryColors.other;
+  const categoryIcon = categoryIcons[email.category] || categoryIcons.other;
 
   function formatTime(dateString) {
     const date = new Date(dateString);
     const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    const month = date.toLocaleDateString('en', { month: 'short' });
+    const day = date.getDate();
+    
+    // If today, show time
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+    
+    // If this year, show "Oct 16"
+    if (date.getFullYear() === now.getFullYear()) {
+      return `${month} ${day}`;
+    }
+    
+    // Otherwise show year
+    return `${month} ${day}, ${date.getFullYear()}`;
   }
 
   return (
     <div
       onClick={onClick}
       className={`
-        p-4 hover:bg-gray-50 cursor-pointer transition-colors border-l-4
-        ${email.read ? 'border-transparent' : 'border-blue-500 bg-blue-50/30'}
+        flex items-center px-4 py-2 cursor-pointer transition-colors border-b border-[#3c3c3c]
+        ${email.read 
+          ? 'hover:bg-[#2d2d2d]' 
+          : 'bg-[#2a2a2a] hover:bg-[#333333]'
+        }
       `}
     >
-      <div className="flex items-start gap-4">
-        {/* Sender Avatar */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
-          {email.from?.[0]?.toUpperCase() || '?'}
+      {/* Star Icon */}
+      <div className="flex items-center mr-2">
+        <button className="p-1 hover:bg-[#3c3c3c] rounded transition-colors">
+          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Category Badge */}
+      <div className={`flex items-center justify-center w-6 h-6 rounded text-xs mr-3 ${categoryColor}`}>
+        {categoryIcon}
+      </div>
+
+      {/* Sender Name */}
+      <div className={`w-48 flex-shrink-0 truncate text-sm ${!email.read ? 'font-bold text-white' : 'text-gray-300'}`}>
+        {email.from || 'Unknown Sender'}
+      </div>
+
+      {/* Subject and Preview */}
+      <div className="flex-1 flex items-baseline gap-2 min-w-0 overflow-hidden">
+        <span className={`text-sm truncate ${!email.read ? 'font-bold text-white' : 'text-gray-300'}`}>
+          {email.subject || '(no subject)'}
+        </span>
+        <span className="text-sm text-gray-500 truncate">
+          — {email.summary || email.content?.substring(0, 100) || 'No preview'}
+        </span>
+      </div>
+
+      {/* Action Items Indicator */}
+      {email.actionItems && email.actionItems.length > 0 && (
+        <div className="flex items-center mr-3">
+          <span className="text-xs text-orange-400 bg-orange-500/20 px-2 py-0.5 rounded">
+            {email.actionItems.length} todo
+          </span>
         </div>
+      )}
 
-        {/* Email Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`font-semibold text-gray-900 ${!email.read && 'font-bold'}`}>
-              {email.from || 'Unknown Sender'}
-            </span>
-            <span className={`text-xs px-2 py-1 rounded-full ${categoryColor}`}>
-              {email.category}
-            </span>
-            {!email.read && (
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-            )}
-          </div>
-
-          <h3 className={`text-sm mb-1 ${!email.read ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-            {email.subject || '(No subject)'}
-          </h3>
-
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {email.summary || email.content?.substring(0, 150) || 'No content'}
-          </p>
-
-          {email.actionItems && email.actionItems.length > 0 && (
-            <div className="mt-2 flex items-center gap-2">
-              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span className="text-xs text-orange-600 font-medium">
-                {email.actionItems.length} action item{email.actionItems.length > 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Time */}
-        <div className="text-xs text-gray-500 flex-shrink-0">
-          {formatTime(email.receivedAt || Date.now())}
-        </div>
+      {/* Time */}
+      <div className={`text-xs flex-shrink-0 w-20 text-right ${!email.read ? 'font-semibold text-gray-300' : 'text-gray-500'}`}>
+        {formatTime(email.receivedAt || Date.now())}
       </div>
     </div>
   );

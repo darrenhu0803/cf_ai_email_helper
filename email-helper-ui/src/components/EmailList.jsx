@@ -2,17 +2,12 @@ import { useState, useEffect } from 'react';
 import { getEmails } from '../api/client';
 import EmailListItem from './EmailListItem';
 
-console.log('=== EMAILLIST.JSX LOADING ===');
-
 export default function EmailList({ category, onSelectEmail }) {
-  console.log('=== EMAILLIST RENDERING ===', { category });
-  
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('=== EMAILLIST useEffect TRIGGERED ===');
     loadEmails();
   }, [category]);
 
@@ -21,13 +16,9 @@ export default function EmailList({ category, onSelectEmail }) {
       setLoading(true);
       setError(null);
       
-      console.log('=== LOADING EMAILS ===');
-      
       // Fetch emails from different users based on category
       // For demo, we'll use 'testuser' and filter client-side
       const response = await getEmails('testuser');
-      
-      console.log('API Response:', response);
       
       // Handle response - check if data exists and is an array
       let emailData = [];
@@ -37,15 +28,11 @@ export default function EmailList({ category, onSelectEmail }) {
         emailData = response;
       }
       
-      console.log('Email data:', emailData, 'Length:', emailData.length);
-      
       // Filter by category
       let filtered = emailData;
       if (category !== 'inbox') {
         filtered = emailData.filter(email => email.category === category);
       }
-      
-      console.log('Filtered emails:', filtered.length);
       
       setEmails(filtered);
     } catch (err) {
@@ -59,10 +46,10 @@ export default function EmailList({ category, onSelectEmail }) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-[#1f1f1f]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading emails...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Loading emails...</p>
         </div>
       </div>
     );
@@ -70,15 +57,15 @@ export default function EmailList({ category, onSelectEmail }) {
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center text-red-600">
+      <div className="flex-1 flex items-center justify-center bg-[#1f1f1f]">
+        <div className="text-center text-red-400">
           <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="font-semibold">{error}</p>
+          <p className="font-semibold text-gray-200">{error}</p>
           <button 
             onClick={loadEmails}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Retry
           </button>
@@ -89,21 +76,21 @@ export default function EmailList({ category, onSelectEmail }) {
 
   if (emails.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-[#1f1f1f]">
         <div className="text-center text-gray-500">
-          <svg className="w-24 h-24 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-24 h-24 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          <p className="text-lg font-semibold">No emails yet</p>
-          <p className="text-sm mt-2">Your {category} folder is empty</p>
+          <p className="text-lg font-semibold text-gray-300">No emails yet</p>
+          <p className="text-sm mt-2 text-gray-500">Your {category} folder is empty</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="divide-y">
+    <div className="flex-1 overflow-y-auto bg-[#1f1f1f]">
+      <div>
         {Array.isArray(emails) && emails.map((email) => (
           <EmailListItem
             key={email.id}
