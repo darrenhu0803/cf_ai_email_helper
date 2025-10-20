@@ -550,7 +550,7 @@ export default {
 					timestamp: Date.now()
 				}));
 
-				const authUrl = getGmailAuthUrl(state);
+				const authUrl = getGmailAuthUrl(state, env);
 
 				return jsonResponse({
 					success: true,
@@ -577,7 +577,7 @@ export default {
 					const userId = stateData.userId;
 
 					// Exchange code for tokens
-					const tokenResult = await exchangeGmailCode(code);
+					const tokenResult = await exchangeGmailCode(code, env);
 					
 					if (!tokenResult.success) {
 						return jsonResponse({

@@ -4,28 +4,31 @@
  */
 
 /**
- * Gmail OAuth Configuration
- * In production, these would be environment variables
+ * Get Gmail OAuth configuration from environment
  */
-const GMAIL_CONFIG = {
-  clientId: process.env.GMAIL_CLIENT_ID || '',
-  clientSecret: process.env.GMAIL_CLIENT_SECRET || '',
-  redirectUri: process.env.GMAIL_REDIRECT_URI || 'http://localhost:8787/auth/gmail/callback',
-  scopes: [
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.modify'
-  ]
-};
+function getGmailConfig(env) {
+  return {
+    clientId: env?.GMAIL_CLIENT_ID || '',
+    clientSecret: env?.GMAIL_CLIENT_SECRET || '',
+    redirectUri: env?.GMAIL_REDIRECT_URI || 'http://localhost:8787/api/oauth/gmail/callback',
+    scopes: [
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/gmail.modify'
+    ]
+  };
+}
 
 /**
  * Generate Gmail OAuth authorization URL
  */
-export function getGmailAuthUrl(state) {
+export function getGmailAuthUrl(state, env = {}) {
+  const config = getGmailConfig(env);
+  
   const params = new URLSearchParams({
-    client_id: GMAIL_CONFIG.clientId,
-    redirect_uri: GMAIL_CONFIG.redirectUri,
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
     response_type: 'code',
-    scope: GMAIL_CONFIG.scopes.join(' '),
+    scope: config.scopes.join(' '),
     access_type: 'offline',
     prompt: 'consent',
     state: state || crypto.randomUUID()
@@ -37,8 +40,10 @@ export function getGmailAuthUrl(state) {
 /**
  * Exchange authorization code for tokens
  */
-export async function exchangeGmailCode(code) {
+export async function exchangeGmailCode(code, env = {}) {
   try {
+    const config = getGmailConfig(env);
+    
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -46,9 +51,9 @@ export async function exchangeGmailCode(code) {
       },
       body: new URLSearchParams({
         code,
-        client_id: GMAIL_CONFIG.clientId,
-        client_secret: GMAIL_CONFIG.clientSecret,
-        redirect_uri: GMAIL_CONFIG.redirectUri,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        redirect_uri: config.redirectUri,
         grant_type: 'authorization_code'
       })
     });
@@ -78,8 +83,10 @@ export async function exchangeGmailCode(code) {
 /**
  * Refresh Gmail access token
  */
-export async function refreshGmailToken(refreshToken) {
+export async function refreshGmailToken(refreshToken, env = {}) {
   try {
+    const config = getGmailConfig(env);
+    
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -87,8 +94,8 @@ export async function refreshGmailToken(refreshToken) {
       },
       body: new URLSearchParams({
         refresh_token: refreshToken,
-        client_id: GMAIL_CONFIG.clientId,
-        client_secret: GMAIL_CONFIG.clientSecret,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
         grant_type: 'refresh_token'
       })
     });
@@ -293,7 +300,7 @@ export async function getEmailProvider(env, userId, provider) {
     // Check if token needs refresh
     if (providerData.expiresAt < Date.now() + (5 * 60 * 1000)) { // Refresh if expires in < 5 min
       if (provider === 'gmail' && providerData.refreshToken) {
-        const refreshResult = await refreshGmailToken(providerData.refreshToken);
+        const refreshResult = await refreshGmailToken(providerData.refreshToken, env);
         if (refreshResult.success) {
           providerData.accessToken = refreshResult.accessToken;
           providerData.expiresAt = Date.now() + (refreshResult.expiresIn * 1000);
