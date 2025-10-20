@@ -159,68 +159,68 @@ export default {
 				});
 			}
 
-			// Test: Get User State
-			if (path.startsWith('/test/user/') && request.method === 'GET') {
-				const userId = path.split('/').pop();
-				
-				const id = env.USER_STATE.idFromName(userId);
-				const stub = env.USER_STATE.get(id);
-				
-				const state = await stub.getState();
-				
-				return jsonResponse({
-					success: true,
-					data: state
-				});
-			}
+		// Test: Get Emails (specific routes BEFORE general user state)
+		if (path.startsWith('/test/user/') && path.includes('/emails') && request.method === 'GET') {
+			const userId = path.split('/')[3];
+			
+			const id = env.USER_STATE.idFromName(userId);
+			const stub = env.USER_STATE.get(id);
+			
+			const emails = await stub.getEmails();
+			
+			return jsonResponse({
+				success: true,
+				count: emails.length,
+				data: emails
+			});
+		}
 
-			// Test: Add Email
-			if (path.startsWith('/test/user/') && path.includes('/email') && request.method === 'POST') {
-				const userId = path.split('/')[3];
-				const emailData = await request.json();
-				
-				const id = env.USER_STATE.idFromName(userId);
-				const stub = env.USER_STATE.get(id);
-				
-				const email = await stub.addEmail(emailData);
-				
-				return jsonResponse({
-					success: true,
-					message: 'Email added',
-					data: email
-				});
-			}
+		// Test: Get User Stats
+		if (path.startsWith('/test/user/') && path.includes('/stats') && request.method === 'GET') {
+			const userId = path.split('/')[3];
+			
+			const id = env.USER_STATE.idFromName(userId);
+			const stub = env.USER_STATE.get(id);
+			
+			const stats = await stub.getStats();
+			
+			return jsonResponse({
+				success: true,
+				data: stats
+			});
+		}
 
-			// Test: Get Emails
-			if (path.startsWith('/test/user/') && path.includes('/emails') && request.method === 'GET') {
-				const userId = path.split('/')[3];
-				
-				const id = env.USER_STATE.idFromName(userId);
-				const stub = env.USER_STATE.get(id);
-				
-				const emails = await stub.getEmails();
-				
-				return jsonResponse({
-					success: true,
-					count: emails.length,
-					data: emails
-				});
-			}
+		// Test: Add Email
+		if (path.startsWith('/test/user/') && path.includes('/email') && request.method === 'POST') {
+			const userId = path.split('/')[3];
+			const emailData = await request.json();
+			
+			const id = env.USER_STATE.idFromName(userId);
+			const stub = env.USER_STATE.get(id);
+			
+			const email = await stub.addEmail(emailData);
+			
+			return jsonResponse({
+				success: true,
+				message: 'Email added',
+				data: email
+			});
+		}
 
-			// Test: Get User Stats
-			if (path.startsWith('/test/user/') && path.includes('/stats') && request.method === 'GET') {
-				const userId = path.split('/')[3];
-				
-				const id = env.USER_STATE.idFromName(userId);
-				const stub = env.USER_STATE.get(id);
-				
-				const stats = await stub.getStats();
-				
-				return jsonResponse({
-					success: true,
-					data: stats
-				});
-			}
+		// Test: Get User State (general route, check LAST)
+		if (path.startsWith('/test/user/') && request.method === 'GET') {
+			const userId = path.split('/').pop();
+			
+			const id = env.USER_STATE.idFromName(userId);
+			const stub = env.USER_STATE.get(id);
+			
+			const state = await stub.getState();
+			
+			return jsonResponse({
+				success: true,
+				data: state
+			});
+		}
 
 			// ==================== CHAT SESSION TESTS ====================
 			
