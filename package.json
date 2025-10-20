@@ -1,6 +1,6 @@
 {
   "name": "cf-ai-email-helper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "AI-powered email helper on Cloudflare",
   "workspaces": [
