@@ -190,5 +190,59 @@ export class UserState extends DurableObject {
 	async clearEmails() {
 		await this.ctx.storage.put('emails', []);
 	}
+
+	/**
+	 * HTTP handler for internal requests
+	 */
+	async fetch(request) {
+		const url = new URL(request.url);
+		const path = url.pathname;
+
+		try {
+			// GET /get - Get user state
+			if (path === '/get' && request.method === 'GET') {
+				const state = await this.getState();
+				return new Response(JSON.stringify({ success: true, state }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			// POST /set-user - Set/update user
+			if (path === '/set-user' && request.method === 'POST') {
+				const data = await request.json();
+				const state = await this.setUser(data);
+				return new Response(JSON.stringify({ success: true, state }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			// POST /add-email - Add email
+			if (path === '/add-email' && request.method === 'POST') {
+				const emailData = await request.json();
+				const email = await this.addEmail(emailData);
+				return new Response(JSON.stringify({ success: true, email }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			// GET /emails - Get emails
+			if (path === '/emails' && request.method === 'GET') {
+				const emails = await this.getEmails();
+				return new Response(JSON.stringify({ success: true, emails }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			return new Response(JSON.stringify({ success: false, error: 'Not found' }), {
+				status: 404,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		} catch (error) {
+			return new Response(JSON.stringify({ success: false, error: error.message }), {
+				status: 500,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+	}
 }
 

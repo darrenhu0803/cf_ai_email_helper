@@ -199,5 +199,59 @@ export class ChatSession extends DurableObject {
 
 		return false;
 	}
+
+	/**
+	 * HTTP handler for internal requests
+	 */
+	async fetch(request) {
+		const url = new URL(request.url);
+		const path = url.pathname;
+
+		try {
+			// GET /get - Get session
+			if (path === '/get' && request.method === 'GET') {
+				const session = await this.getSession();
+				return new Response(JSON.stringify({ success: true, session }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			// POST /init - Initialize session
+			if (path === '/init' && request.method === 'POST') {
+				const data = await request.json();
+				const session = await this.initSession(data);
+				return new Response(JSON.stringify({ success: true, session }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			// POST /add-message - Add message
+			if (path === '/add-message' && request.method === 'POST') {
+				const messageData = await request.json();
+				const message = await this.addMessage(messageData);
+				return new Response(JSON.stringify({ success: true, message }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			// GET /recent - Get recent messages
+			if (path === '/recent' && request.method === 'GET') {
+				const messages = await this.getRecentMessages();
+				return new Response(JSON.stringify({ success: true, messages }), {
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
+
+			return new Response(JSON.stringify({ success: false, error: 'Not found' }), {
+				status: 404,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		} catch (error) {
+			return new Response(JSON.stringify({ success: false, error: error.message }), {
+				status: 500,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+	}
 }
 
