@@ -21,7 +21,7 @@ export default function Sidebar({ selectedCategory, onSelectCategory }) {
   };
 
   return (
-    <div className="w-64 bg-[#171717] border-r border-[#3c3c3c] flex flex-col">
+    <div className="w-64 flex-shrink-0 bg-[#171717] border-r border-[#3c3c3c] flex flex-col">
       {/* Logo/Header */}
       <div className="px-4 py-6">
         <div className="flex items-center gap-2 text-white">
