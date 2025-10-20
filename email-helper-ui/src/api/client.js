@@ -8,7 +8,9 @@ const API_BASE = 'http://localhost:8787';
  * Fetch emails for a user
  */
 export async function getEmails(userId = 'testuser') {
-  const response = await fetch(`${API_BASE}/test/user/${userId}/emails`);
+  const response = await fetch(`${API_BASE}/test/user/${userId}/emails`, {
+    credentials: 'include',
+  });
   if (!response.ok) throw new Error('Failed to fetch emails');
   return response.json();
 }
@@ -31,6 +33,7 @@ export async function sendChatMessage(userId, sessionId, message) {
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify({
       userId,
       sessionId,

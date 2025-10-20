@@ -2,15 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { sendChatMessage, initChatSession } from '../api/client';
 import MessageBubble from './MessageBubble';
 
-export default function ChatPanel({ isOpen, onClose }) {
+export default function ChatPanel({ isOpen, onClose, userId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionInitialized, setSessionInitialized] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const userId = 'testuser';
-  const sessionId = 'chat-session-1';
+  const sessionId = `chat-session-${userId || 'guest'}`;
 
   useEffect(() => {
     if (isOpen && !sessionInitialized) {
@@ -24,7 +23,7 @@ export default function ChatPanel({ isOpen, onClose }) {
 
   async function initSession() {
     try {
-      await initChatSession(sessionId, userId);
+      await initChatSession(sessionId, userId || 'testuser');
       setSessionInitialized(true);
       
       // Add welcome message
@@ -59,7 +58,7 @@ export default function ChatPanel({ isOpen, onClose }) {
 
     try {
       // Send to backend
-      const response = await sendChatMessage(userId, sessionId, userMessage);
+      const response = await sendChatMessage(userId || 'testuser', sessionId, userMessage);
       
       // Add AI response
       setMessages(prev => [...prev, {

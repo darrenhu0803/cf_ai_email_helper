@@ -2,23 +2,22 @@ import { useState, useEffect } from 'react';
 import { getEmails } from '../api/client';
 import EmailListItem from './EmailListItem';
 
-export default function EmailList({ category, onSelectEmail }) {
+export default function EmailList({ category, onSelectEmail, userId }) {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadEmails();
-  }, [category]);
+  }, [category, userId]);
 
   async function loadEmails() {
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch emails from different users based on category
-      // For demo, we'll use 'testuser' and filter client-side
-      const response = await getEmails('testuser');
+      // Fetch emails for the authenticated user
+      const response = await getEmails(userId || 'testuser');
       
       // Handle response - check if data exists and is an array
       let emailData = [];
