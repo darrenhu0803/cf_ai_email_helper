@@ -48,8 +48,12 @@ Summary:`;
 		return summary.trim();
 
 	} catch (error) {
-		console.error('Error summarizing email:', error);
-		return `Email from ${from} about ${subject}`;
+		console.error('Error summarizing email (using simple fallback):', error.message);
+		// Simple fallback: truncate content with preview
+		const truncated = emailContent.substring(0, 150);
+		const lastSpace = truncated.lastIndexOf(' ');
+		const preview = lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated;
+		return `${preview}...`;
 	}
 }
 
@@ -62,6 +66,51 @@ Summary:`;
  */
 export async function classifyEmail(ai, emailContent, metadata = {}) {
 	const { from = '', subject = '' } = metadata;
+	
+	// Simple rule-based classification (for local dev when AI isn't available)
+	const simpleClassify = () => {
+		const lowerFrom = from.toLowerCase();
+		const lowerSubject = subject.toLowerCase();
+		const lowerContent = emailContent.toLowerCase();
+		
+		// Newsletter patterns
+		if (lowerFrom.includes('newsletter') || lowerSubject.includes('newsletter') || 
+		    lowerSubject.includes('weekly') || lowerSubject.includes('digest') ||
+		    lowerFrom.includes('blog') || lowerFrom.includes('updates')) {
+			return 'newsletter';
+		}
+		
+		// Spam patterns
+		if (lowerSubject.includes('congratulations') || lowerSubject.includes('winner') ||
+		    lowerContent.includes('click here now') || lowerContent.includes('act now') ||
+		    lowerFrom.includes('noreply') && lowerSubject.includes('verify')) {
+			return 'spam';
+		}
+		
+		// Promotional patterns
+		if (lowerSubject.includes('sale') || lowerSubject.includes('discount') ||
+		    lowerSubject.includes('offer') || lowerSubject.includes('deal') ||
+		    lowerSubject.includes('% off')) {
+			return 'promotional';
+		}
+		
+		// Social patterns
+		if (lowerFrom.includes('facebook') || lowerFrom.includes('twitter') ||
+		    lowerFrom.includes('linkedin') || lowerFrom.includes('instagram') ||
+		    lowerSubject.includes('friend request') || lowerSubject.includes('tagged you')) {
+			return 'social';
+		}
+		
+		// Important patterns
+		if (lowerSubject.includes('urgent') || lowerSubject.includes('important') ||
+		    lowerSubject.includes('action required') || lowerSubject.includes('project') ||
+		    lowerSubject.includes('meeting') || lowerSubject.includes('contract') ||
+		    lowerSubject.includes('review') || lowerSubject.includes('statement')) {
+			return 'important';
+		}
+		
+		return 'other';
+	};
 	
 	const prompt = `Classify the following email into ONE category:
 - important: Work-related, urgent, from known contacts, requires action
@@ -116,12 +165,16 @@ Respond with ONLY the category name (lowercase, one word).`;
 		};
 
 	} catch (error) {
-		console.error('Error classifying email:', error);
+		console.error('Error classifying email (using rule-based fallback):', error.message);
+		// Use simple rule-based classification as fallback
+		const category = simpleClassify();
+		const shouldFilter = category === 'spam';
+		
 		return {
-			category: 'other',
-			confidence: 0.5,
-			shouldFilter: false,
-			reason: 'Classification failed'
+			category,
+			confidence: 0.7,
+			shouldFilter,
+			reason: getClassificationReason(category, from, subject) + ' (rule-based)'
 		};
 	}
 }
