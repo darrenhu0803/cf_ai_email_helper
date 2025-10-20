@@ -22,7 +22,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex h-screen bg-[#1f1f1f]">
+    <div className="flex h-screen w-screen bg-[#1f1f1f]">
       {/* Left Sidebar - Navigation */}
       <Sidebar 
         selectedCategory={selectedCategory}
