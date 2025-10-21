@@ -57,10 +57,10 @@ AI Email Helper leverages Cloudflare's serverless platform to provide intelligen
 
 2. **Setup credentials**
    ```bash
-   # Copy the template
-   cp .env.example .env.local
+   # Copy the template to the worker directory
+   cp .env.example email-helper-worker/.dev.vars
    
-   # Edit .env.local and add your Gmail OAuth credentials
+   # Edit email-helper-worker/.dev.vars and add your Gmail OAuth credentials
    ```
 
 3. **Install dependencies**
@@ -114,19 +114,19 @@ Before running the app, you need to configure Gmail OAuth credentials:
 
 #### Step 2: Add Credentials Locally
 
-1. **Copy the environment template**:
+1. **Copy the environment template to the worker directory**:
    ```bash
-   cp .env.example .env.local
+   cp .env.example email-helper-worker/.dev.vars
    ```
 
-2. **Edit `.env.local`** and add your credentials:
+2. **Edit `email-helper-worker/.dev.vars`** and add your credentials:
    ```env
    GMAIL_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
    GMAIL_CLIENT_SECRET=GOCSPX-your-secret-here
    GMAIL_REDIRECT_URI=http://localhost:8787/api/oauth/gmail/callback
    ```
 
-3. **Save the file** - `.env.local` is automatically ignored by Git (never commit it!)
+3. **Save the file** - `.dev.vars` is automatically ignored by Git (never commit it!)
 
 #### Step 3: Connect Your Gmail
 
