@@ -38,9 +38,6 @@
 		"crons": [
 			"0 9 * * *"
 		]
-	},
-	"vars": {
-		"GMAIL_REDIRECT_URI": "http://localhost:8787/api/oauth/gmail/callback"
 	}
 	/**
 	 * Email Routing Configuration

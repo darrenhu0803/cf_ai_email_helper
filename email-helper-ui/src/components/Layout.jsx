@@ -3,14 +3,14 @@ import Sidebar from './Sidebar';
 import EmailList from './EmailList';
 import ChatPanel from './ChatPanel';
 import EmailDetail from './EmailDetail';
-import Settings from './Settings';
+import SettingsPage from './SettingsPage';
 
 export default function Layout({ user, onLogout }) {
   const [selectedCategory, setSelectedCategory] = useState('inbox');
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [currentView, setCurrentView] = useState('email'); // 'email' or 'settings'
 
   const getCategoryTitle = () => {
     switch(selectedCategory) {
@@ -23,6 +23,18 @@ export default function Layout({ user, onLogout }) {
       default: return 'Inbox';
     }
   };
+
+  // If settings view, show settings page
+  if (currentView === 'settings') {
+    return (
+      <div className="flex h-screen w-screen bg-[#1f1f1f]">
+        <SettingsPage 
+          user={user} 
+          onBack={() => setCurrentView('email')}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-screen bg-[#1f1f1f]">
@@ -76,7 +88,7 @@ export default function Layout({ user, onLogout }) {
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
-                      setShowSettings(true);
+                      setCurrentView('settings');
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-[#3c3c3c] transition-colors flex items-center gap-2"
                   >
@@ -127,14 +139,6 @@ export default function Layout({ user, onLogout }) {
         onClose={() => setChatOpen(false)}
         userId={user?.id || user?.email}
       />
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <Settings 
-          user={user} 
-          onClose={() => setShowSettings(false)}
-        />
-      )}
     </div>
   );
 }
