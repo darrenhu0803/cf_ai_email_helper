@@ -40,8 +40,6 @@
 		]
 	},
 	"vars": {
-		"GMAIL_CLIENT_ID": "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com",
-		"GMAIL_CLIENT_SECRET": "YOUR_CLIENT_SECRET_HERE",
 		"GMAIL_REDIRECT_URI": "http://localhost:8787/api/oauth/gmail/callback"
 	}
 	/**
