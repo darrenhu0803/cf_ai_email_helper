@@ -55,13 +55,12 @@ AI Email Helper leverages Cloudflare's serverless platform to provide intelligen
    cd cf-ai-email-helper
    ```
 
-2. **Setup credentials safely**
+2. **Setup credentials**
    ```bash
    # Copy the template
    cp .env.example .env.local
    
    # Edit .env.local and add your Gmail OAuth credentials
-   # See GMAIL_SETUP_GUIDE.md for how to get credentials
    ```
 
 3. **Install dependencies**
@@ -81,13 +80,67 @@ AI Email Helper leverages Cloudflare's serverless platform to provide intelligen
 
 ### Configuration
 
-Before running the app, you need to set up your Gmail OAuth credentials:
+Before running the app, you need to configure Gmail OAuth credentials:
 
-1. **Read the security guide** - See [SETUP_SECURITY.md](./SETUP_SECURITY.md) for safe credential handling
-2. **Follow the setup guide** - See [GMAIL_SETUP_GUIDE.md](./GMAIL_SETUP_GUIDE.md) for detailed OAuth setup (5 minutes)
-3. **Add your credentials** - Copy `.env.example` to `.env.local` and fill in your credentials
+#### Step 1: Create Google OAuth Credentials (5 minutes)
 
-**Never commit `.env.local` to Git!** It's automatically ignored by `.gitignore`.
+1. **Go to [Google Cloud Console](https://console.cloud.google.com/)**
+   - Create a new project or select existing one
+   - Name it "AI Email Helper"
+
+2. **Enable Gmail API**
+   - Search for "Gmail API" in the console
+   - Click "Enable"
+
+3. **Configure OAuth Consent Screen**
+   - Go to "APIs & Services" → "OAuth consent screen"
+   - User Type: **External**
+   - App name: **AI Email Helper**
+   - Add your email as support and developer contact
+   - **Scopes**: Add these Gmail scopes:
+     - `https://www.googleapis.com/auth/gmail.readonly`
+     - `https://www.googleapis.com/auth/gmail.modify`
+   - **Test users**: Add your Gmail address
+   - Click "Save and Continue"
+
+4. **Create OAuth Client ID**
+   - Go to "Credentials" → "Create Credentials" → "OAuth client ID"
+   - Application type: **Web application**
+   - Name: **AI Email Helper**
+   - Authorized redirect URIs:
+     - Add: `http://localhost:8787/api/oauth/gmail/callback`
+   - Click "Create"
+   - **Copy the Client ID and Client Secret**
+
+#### Step 2: Add Credentials Locally
+
+1. **Copy the environment template**:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. **Edit `.env.local`** and add your credentials:
+   ```env
+   GMAIL_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
+   GMAIL_CLIENT_SECRET=GOCSPX-your-secret-here
+   GMAIL_REDIRECT_URI=http://localhost:8787/api/oauth/gmail/callback
+   ```
+
+3. **Save the file** - `.env.local` is automatically ignored by Git (never commit it!)
+
+#### Step 3: Connect Your Gmail
+
+1. Start the app: `npm run dev`
+2. Open http://localhost:5173
+3. Login/Register an account
+4. Click your profile → **Settings**
+5. Click **"Connect Gmail"**
+6. Authorize the app in Google OAuth flow
+7. Click **"Sync Now"** to import your emails
+
+✅ **Done!** Your emails will now sync with AI summaries and classifications.
+
+---
 
 ### Deployment
 
@@ -100,6 +153,13 @@ npm run deploy:worker
 npm run deploy:ui
 ```
 
+**For production**: Use Cloudflare Secrets instead of environment variables:
+```bash
+npx wrangler secret put GMAIL_CLIENT_SECRET
+# Prompted to enter the secret value
+```
+
+---
 
 ## Acknowledgments
 
