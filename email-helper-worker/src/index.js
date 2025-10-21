@@ -619,7 +619,9 @@ export default {
 					});
 
 					// Redirect to frontend with success
-					return Response.redirect(`${url.origin}/settings?oauth=success`, 302);
+					// Note: Frontend is at port 5173, worker is at 8787
+					const frontendUrl = url.origin.replace(':8787', ':5173');
+					return Response.redirect(`${frontendUrl}/?oauth=success`, 302);
 				} catch (error) {
 					console.error('OAuth callback error:', error);
 					return jsonResponse({

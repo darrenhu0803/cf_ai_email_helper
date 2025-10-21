@@ -6,6 +6,19 @@ import './App.css';
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [oauthSuccess, setOauthSuccess] = useState(false);
+
+  useEffect(() => {
+    // Check for OAuth success in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('oauth') === 'success') {
+      setOauthSuccess(true);
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => setOauthSuccess(false), 5000);
+    }
+  }, []);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -74,7 +87,7 @@ function App() {
     return <AuthPage onLogin={handleLogin} />;
   }
 
-  return <Layout user={user} onLogout={handleLogout} />;
+  return <Layout user={user} onLogout={handleLogout} oauthSuccess={oauthSuccess} />;
 }
 
 export default App;

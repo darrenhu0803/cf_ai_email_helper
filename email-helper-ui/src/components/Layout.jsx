@@ -1,16 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import EmailList from './EmailList';
 import ChatPanel from './ChatPanel';
 import EmailDetail from './EmailDetail';
 import SettingsPage from './SettingsPage';
 
-export default function Layout({ user, onLogout }) {
+export default function Layout({ user, onLogout, oauthSuccess }) {
   const [selectedCategory, setSelectedCategory] = useState('inbox');
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Auto-open settings when OAuth completes
+  useEffect(() => {
+    if (oauthSuccess) {
+      setShowSettings(true);
+    }
+  }, [oauthSuccess]);
 
   const getCategoryTitle = () => {
     if (showSettings) return 'Settings';
@@ -38,6 +45,16 @@ export default function Layout({ user, onLogout }) {
 
   return (
     <div className="flex h-screen w-screen bg-[#1f1f1f]">
+      {/* Success Notification */}
+      {oauthSuccess && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="font-medium">Gmail connected successfully!</span>
+        </div>
+      )}
+
       {/* Left Sidebar - Navigation */}
       <Sidebar 
         selectedCategory={selectedCategory}
