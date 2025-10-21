@@ -1,123 +1,155 @@
-# Quick Gmail OAuth Setup Guide
+# Quick Gmail Setup Guide
 
-Follow these simple steps to connect your Gmail account to the app.
+## 🚀 5-Minute Setup
 
-## Step 1: Create Google Cloud Project (5 minutes)
+### Step 1: Create Google Cloud Project (2 minutes)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Click **"Create Project"**
-3. Name it: `Email Helper App`
-4. Click **Create**
+2. Click "Select a project" → "New Project"
+3. Name it "Email Helper" → Click "Create"
 
-## Step 2: Enable Gmail API (2 minutes)
+### Step 2: Enable Gmail API (30 seconds)
 
-1. In your new project, go to **"APIs & Services" > "Library"**
-2. Search for **"Gmail API"**
-3. Click on it and press **"Enable"**
+1. In the search bar, type "Gmail API"
+2. Click "Gmail API" in results
+3. Click "Enable"
 
-## Step 3: Configure OAuth Consent Screen (3 minutes)
+### Step 3: Create OAuth Credentials (2 minutes)
 
-1. Go to **"APIs & Services" > "OAuth consent screen"**
-2. Choose **"External"** and click **Create**
-3. Fill in required fields:
-   - **App name**: AI Email Helper
-   - **User support email**: your email
-   - **Developer contact**: your email
-4. Click **"Save and Continue"**
-5. On Scopes page: **Skip** (click "Save and Continue")
-6. On Test users page: **Add your email** as a test user
-7. Click **"Save and Continue"**, then **"Back to Dashboard"**
+1. Go to "APIs & Services" → "Credentials"
+2. Click "Create Credentials" → "OAuth client ID"
+3. **First time?** Configure consent screen:
+   - User Type: **External**
+   - App name: **Email Helper**
+   - User support email: **your-email@gmail.com**
+   - Developer contact: **your-email@gmail.com**
+   - Click "Save and Continue" (skip optional fields)
+   - **Scopes**: Click "Add or Remove Scopes"
+     - Search for "Gmail API" 
+     - Select: `https://www.googleapis.com/auth/gmail.readonly`
+     - Select: `https://www.googleapis.com/auth/gmail.modify`
+     - Click "Update" → "Save and Continue"
+   - **Test users**: Add your Gmail address
+   - Click "Save and Continue" → "Back to Dashboard"
 
-## Step 4: Create OAuth Credentials (3 minutes)
+4. **Create OAuth Client**:
+   - Click "Create Credentials" → "OAuth client ID"
+   - Application type: **Web application**
+   - Name: **Email Helper**
+   - Authorized redirect URIs:
+     - Add: `http://localhost:8787/api/oauth/gmail/callback`
+     - For production, also add: `https://your-worker-url.workers.dev/api/oauth/gmail/callback`
+   - Click "Create"
 
-1. Go to **"APIs & Services" > "Credentials"**
-2. Click **"Create Credentials" > "OAuth client ID"**
-3. Choose **"Web application"**
-4. Name it: `Email Helper Worker`
-5. Under **"Authorized redirect URIs"**, click **"Add URI"** and enter:
-   ```
-   http://localhost:8787/api/oauth/gmail/callback
-   ```
-6. Click **Create**
-7. **IMPORTANT**: Copy the **Client ID** and **Client Secret**
+5. **Copy your credentials**:
+   - You'll see a popup with "Client ID" and "Client Secret"
+   - Copy both values
 
-## Step 5: Add Credentials to Worker (2 minutes)
-
-### For Development (Local):
+### Step 4: Configure the App (30 seconds)
 
 1. Open `cf_ai_email_helper/email-helper-worker/wrangler.jsonc`
-2. Find the `vars` section and add:
+2. Find the `vars` section:
    ```jsonc
    "vars": {
-     "GMAIL_CLIENT_ID": "your-client-id-here.apps.googleusercontent.com",
+     "GMAIL_CLIENT_ID": "",           // Paste Client ID here
+     "GMAIL_CLIENT_SECRET": "",       // Paste Client Secret here
      "GMAIL_REDIRECT_URI": "http://localhost:8787/api/oauth/gmail/callback"
    }
    ```
+3. Paste your Client ID and Client Secret
+4. Save the file
 
-3. Create a file: `cf_ai_email_helper/email-helper-worker/.dev.vars`
-4. Add your client secret:
+### Step 5: Restart & Connect (30 seconds)
+
+1. **Restart the worker**:
+   ```bash
+   # Stop the current dev server (Ctrl+C)
+   cd cf_ai_email_helper
+   npm run dev
    ```
-   GMAIL_CLIENT_SECRET=your-client-secret-here
-   ```
 
-5. **Restart your worker**: Stop `npm run dev` and start it again
+2. **Connect your Gmail**:
+   - Open the app in your browser
+   - Click your profile icon → "Settings"
+   - Click "Connect Gmail"
+   - Authorize the app
+   - Click "Sync Now"
 
-## Step 6: Connect Gmail in the App! 🎉
-
-1. In the app, click your **profile icon** (top right)
-2. Click **"Settings"**
-3. Click **"Connect Gmail"**
-4. You'll be redirected to Google
-5. Choose your account and grant permissions
-6. You'll be redirected back to the app
-7. Click **"Sync Now"** to fetch your emails!
-
-## Troubleshooting
-
-### "redirect_uri_mismatch" Error
-- Make sure the redirect URI in Google Console **exactly** matches: `http://localhost:8787/api/oauth/gmail/callback`
-- No trailing slash!
-- Check it's `http://` not `https://` for local development
-
-### "invalid_client" Error  
-- Double-check your Client ID and Client Secret are correct
-- Make sure you restarted the worker after adding credentials
-
-### No emails showing after sync
-- Check the browser console for errors
-- Make sure you have emails in your Gmail inbox
-- Try the test email script first: `powershell -ExecutionPolicy Bypass -File test-add-emails.ps1`
-
-## What Permissions Does the App Request?
-
-- **gmail.readonly**: Read your emails (cannot send or delete)
-- **gmail.modify**: Mark emails as read/unread (needed for management)
-
-The app **NEVER**:
-- Sends emails on your behalf
-- Deletes emails
-- Shares your data with anyone
-- Stores emails outside your Cloudflare worker
-
-## For Production Deployment
-
-When deploying to production, use Cloudflare Secrets instead:
-
-```bash
-cd email-helper-worker
-npx wrangler secret put GMAIL_CLIENT_ID
-# Enter your client ID when prompted
-
-npx wrangler secret put GMAIL_CLIENT_SECRET
-# Enter your client secret when prompted
-
-npx wrangler secret put GMAIL_REDIRECT_URI
-# Enter: https://your-worker.your-subdomain.workers.dev/api/oauth/gmail/callback
-```
-
-And update the redirect URI in Google Cloud Console to match your production URL.
+Done! ✅ Your emails will now sync automatically!
 
 ---
 
-**Need help?** Check `OAUTH_SETUP.md` for more detailed information.
+## 📋 Example Configuration
+
+Your `wrangler.jsonc` should look like this:
+
+```jsonc
+{
+  "name": "email-helper-worker",
+  // ... other config ...
+  "vars": {
+    "GMAIL_CLIENT_ID": "1234567890-abc123xyz.apps.googleusercontent.com",
+    "GMAIL_CLIENT_SECRET": "GOCSPX-abcdefghijklmnop",
+    "GMAIL_REDIRECT_URI": "http://localhost:8787/api/oauth/gmail/callback"
+  }
+}
+```
+
+---
+
+## 🔒 Production Deployment
+
+For production, **DON'T** put secrets in `wrangler.jsonc`. Use Cloudflare Secrets instead:
+
+```bash
+# Set secrets (prompted to enter value)
+npx wrangler secret put GMAIL_CLIENT_SECRET
+
+# Update redirect URI in wrangler.jsonc for production
+"GMAIL_REDIRECT_URI": "https://your-worker.your-subdomain.workers.dev/api/oauth/gmail/callback"
+```
+
+Also update your Google Cloud Console:
+- Add production redirect URI to "Authorized redirect URIs"
+- Publish your OAuth consent screen (if you need more than 100 users)
+
+---
+
+## 🐛 Troubleshooting
+
+### "Error 400: redirect_uri_mismatch"
+- The redirect URI in Google Cloud Console must **exactly** match the one in your worker
+- Check for trailing slashes, http vs https
+
+### "OAuth client not configured"
+- Make sure you've copied Client ID and Client Secret correctly
+- Restart the worker after changing config
+
+### "The app is blocked"
+- Your app is in testing mode (normal for development)
+- Add your Gmail address to "Test users" in OAuth consent screen
+
+### "Connection error" when clicking Connect Gmail
+- Make sure GMAIL_CLIENT_ID is set in wrangler.jsonc
+- Check that the worker restarted after config changes
+
+---
+
+## 🎉 What Works Now
+
+Once connected, you can:
+- ✅ Sync your Gmail messages
+- ✅ See AI summaries of all emails
+- ✅ Automatic categorization (Important, Spam, Newsletter, etc.)
+- ✅ Action items extracted from emails
+- ✅ Chat with AI about your emails
+- ✅ Periodic auto-sync (coming soon with Cron)
+
+---
+
+## 📚 More Info
+
+- Full OAuth setup guide: See `OAUTH_SETUP.md`
+- Google OAuth docs: https://developers.google.com/identity/protocols/oauth2
+- Cloudflare Workers: https://developers.cloudflare.com/workers/
 

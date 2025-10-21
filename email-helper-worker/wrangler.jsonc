@@ -38,6 +38,21 @@
 		"crons": [
 			"0 9 * * *"
 		]
+	},
+	/**
+	 * Gmail OAuth Configuration
+	 * To enable Gmail integration:
+	 * 1. Create a Google Cloud Project: https://console.cloud.google.com/
+	 * 2. Enable Gmail API
+	 * 3. Create OAuth 2.0 credentials
+	 * 4. Add your credentials below (for development)
+	 * 5. For production, use secrets:
+	 *    npx wrangler secret put GMAIL_CLIENT_SECRET
+	 */
+	"vars": {
+		"GMAIL_CLIENT_ID": "",
+		"GMAIL_CLIENT_SECRET": "",
+		"GMAIL_REDIRECT_URI": "http://localhost:8787/api/oauth/gmail/callback"
 	}
 	/**
 	 * Email Routing Configuration

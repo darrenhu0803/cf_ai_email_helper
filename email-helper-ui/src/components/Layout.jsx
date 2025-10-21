@@ -10,9 +10,10 @@ export default function Layout({ user, onLogout }) {
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [currentView, setCurrentView] = useState('email'); // 'email' or 'settings'
+  const [showSettings, setShowSettings] = useState(false);
 
   const getCategoryTitle = () => {
+    if (showSettings) return 'Settings';
     switch(selectedCategory) {
       case 'inbox': return 'Inbox';
       case 'important': return 'Important';
@@ -24,24 +25,25 @@ export default function Layout({ user, onLogout }) {
     }
   };
 
-  // If settings view, show settings page
-  if (currentView === 'settings') {
-    return (
-      <div className="flex h-screen w-screen bg-[#1f1f1f]">
-        <SettingsPage 
-          user={user} 
-          onBack={() => setCurrentView('email')}
-        />
-      </div>
-    );
-  }
+  const handleSelectCategory = (category) => {
+    setSelectedCategory(category);
+    setShowSettings(false);
+    setSelectedEmail(null);
+  };
+
+  const handleShowSettings = () => {
+    setShowSettings(true);
+    setSelectedEmail(null);
+  };
 
   return (
     <div className="flex h-screen w-screen bg-[#1f1f1f]">
       {/* Left Sidebar - Navigation */}
       <Sidebar 
         selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={handleSelectCategory}
+        onShowSettings={handleShowSettings}
+        showSettings={showSettings}
       />
 
       {/* Center - Email List */}
@@ -88,7 +90,7 @@ export default function Layout({ user, onLogout }) {
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
-                      setCurrentView('settings');
+                      handleShowSettings();
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-[#3c3c3c] transition-colors flex items-center gap-2"
                   >
@@ -103,7 +105,7 @@ export default function Layout({ user, onLogout }) {
                       setShowUserMenu(false);
                       onLogout();
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-[#3c3c3c] transition-colors flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-[#3c3c3c] transition-colors flex items-center gap-2 border-t border-[#3c3c3c]"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -117,8 +119,13 @@ export default function Layout({ user, onLogout }) {
         </div>
 
         <div className="flex-1 overflow-hidden flex">
-          {/* Email List or Detail View */}
-          {selectedEmail ? (
+          {/* Settings, Email Detail, or Email List */}
+          {showSettings ? (
+            <SettingsPage 
+              user={user}
+              onBack={() => setShowSettings(false)}
+            />
+          ) : selectedEmail ? (
             <EmailDetail 
               email={selectedEmail} 
               onBack={() => setSelectedEmail(null)}
