@@ -55,12 +55,21 @@ AI Email Helper leverages Cloudflare's serverless platform to provide intelligen
    cd cf-ai-email-helper
    ```
 
-2. **Install dependencies**
+2. **Setup credentials safely**
+   ```bash
+   # Copy the template
+   cp .env.example .env.local
+   
+   # Edit .env.local and add your Gmail OAuth credentials
+   # See GMAIL_SETUP_GUIDE.md for how to get credentials
+   ```
+
+3. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Start development servers**
+4. **Start development servers**
    ```bash
    # Start both worker and UI simultaneously
    npm run dev
@@ -69,6 +78,16 @@ AI Email Helper leverages Cloudflare's serverless platform to provide intelligen
    npm run dev:worker   # Backend at http://localhost:8787
    npm run dev:ui       # Frontend at http://localhost:5173
    ```
+
+### Configuration
+
+Before running the app, you need to set up your Gmail OAuth credentials:
+
+1. **Read the security guide** - See [SETUP_SECURITY.md](./SETUP_SECURITY.md) for safe credential handling
+2. **Follow the setup guide** - See [GMAIL_SETUP_GUIDE.md](./GMAIL_SETUP_GUIDE.md) for detailed OAuth setup (5 minutes)
+3. **Add your credentials** - Copy `.env.example` to `.env.local` and fill in your credentials
+
+**Never commit `.env.local` to Git!** It's automatically ignored by `.gitignore`.
 
 ### Deployment
 
