@@ -102,7 +102,6 @@ This app uses **Google OAuth 2.0** to securely access your Gmail. You'll create 
 5. Wait a few seconds for the project to be created
 
 
-
 ---
 
 #### Step 2: Enable Gmail API
@@ -160,17 +159,13 @@ Click **"Save and Continue"**
 
 **Authorized redirect URIs:**
 1. Click **"+ Add URI"**
-2. Enter exactly: `http://localhost:8787/api/oauth/gmail/callback`
-3. ⚠️ **Important**: No trailing slash, exactly as shown above
-4. Click **"Create"**
+2. Enter: `http://localhost:8787/api/oauth/gmail/callback`
+3. Click **"Create"**
 
 **Save your credentials:**
 - A popup will appear with your **Client ID** and **Client Secret**
 - ✅ **Copy both values** - you'll need them in the next step
 - Click **"OK"**
-
-
-💡 **Tip**: You can always view your credentials later by clicking on the OAuth client name in the Credentials page.
 
 ---
 
