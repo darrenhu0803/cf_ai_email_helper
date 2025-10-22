@@ -350,5 +350,4 @@ Your Gmail is now connected and AI-powered! You can:
 
 - Built with [Cloudflare Workers](https://workers.cloudflare.com/)
 - Powered by [Workers AI](https://developers.cloudflare.com/workers-ai/)
-- Inspired by the [Cloudflare Agents](https://developers.cloudflare.com/agents/) documentation
 
