@@ -4,7 +4,6 @@
 
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
 
@@ -88,7 +87,7 @@ To connect your Gmail account and start using the AI email features, you'll need
 
 ### Overview
 
-This app uses **Google OAuth 2.0** to securely access your Gmail. You'll create OAuth credentials in Google Cloud Console, then configure them locally. Your credentials stay on your machine and are **never committed to Git**.
+This app uses **Google OAuth 2.0** to securely access your Gmail. You'll create OAuth credentials in Google Cloud Console, then configure them locally. 
 
 ---
 
@@ -102,7 +101,7 @@ This app uses **Google OAuth 2.0** to securely access your Gmail. You'll create 
 4. Click **"Create"**
 5. Wait a few seconds for the project to be created
 
-> 📷 **[Screenshot: Creating a new Google Cloud project]**
+
 
 ---
 
@@ -113,8 +112,6 @@ This app uses **Google OAuth 2.0** to securely access your Gmail. You'll create 
 3. Click on **"Gmail API"** in the results
 4. Click the **"Enable"** button
 5. Wait for the API to be enabled
-
-> 📷 **[Screenshot: Gmail API page with Enable button]**
 
 ---
 
@@ -131,7 +128,6 @@ This app uses **Google OAuth 2.0** to securely access your Gmail. You'll create 
 
 Click **"Save and Continue"**
 
-> 📷 **[Screenshot: OAuth consent screen configuration]**
 
 **Scopes:**
 1. Click **"Add or Remove Scopes"**
@@ -142,16 +138,12 @@ Click **"Save and Continue"**
 4. Click **"Update"**
 5. Click **"Save and Continue"**
 
-> 📷 **[Screenshot: Selecting Gmail API scopes]**
 
 **Test users:**
 1. Click **"Add Users"**
 2. Enter your Gmail address (the one you'll use to test the app)
 3. Click **"Add"**
 4. Click **"Save and Continue"**
-
-> 📷 **[Screenshot: Adding test users]**
-
 5. Review the summary and click **"Back to Dashboard"**
 
 ---
@@ -170,9 +162,6 @@ Click **"Save and Continue"**
 1. Click **"+ Add URI"**
 2. Enter exactly: `http://localhost:8787/api/oauth/gmail/callback`
 3. ⚠️ **Important**: No trailing slash, exactly as shown above
-
-> 📷 **[Screenshot: OAuth client ID configuration with redirect URI]**
-
 4. Click **"Create"**
 
 **Save your credentials:**
@@ -180,7 +169,6 @@ Click **"Save and Continue"**
 - ✅ **Copy both values** - you'll need them in the next step
 - Click **"OK"**
 
-> 📷 **[Screenshot: OAuth client created popup with credentials]**
 
 💡 **Tip**: You can always view your credentials later by clicking on the OAuth client name in the Credentials page.
 
@@ -197,7 +185,7 @@ Click **"Save and Continue"**
    cp .env.example email-helper-worker/.dev.vars
    ```
 
-3. **Edit `email-helper-worker/.dev.vars`** with your favorite text editor:
+3. **Edit `email-helper-worker/.dev.vars`**:
 ```bash
    # Windows
    notepad email-helper-worker\.dev.vars
@@ -208,18 +196,12 @@ Click **"Save and Continue"**
 
 4. **Paste your credentials**:
    ```env
-   GMAIL_CLIENT_ID=1036976009641-xxxxxxxxxxxxx.apps.googleusercontent.com
-   GMAIL_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxxxxxx
+   GMAIL_CLIENT_ID=xxxxxxxxxxxxx-xxxxxxxxxxxxx.apps.googleusercontent.com
+   GMAIL_CLIENT_SECRET=xxxxxx-xxxxxxxxxxxxxxxxxxxx
    GMAIL_REDIRECT_URI=http://localhost:8787/api/oauth/gmail/callback
    ```
    
    Replace the `xxx` values with your actual Client ID and Client Secret from Step 4.
-
-5. **Save the file**
-
-> 📷 **[Screenshot: .dev.vars file with credentials filled in]**
-
-🔒 **Security Note**: The `.dev.vars` file is automatically ignored by Git (check `.gitignore`). Your credentials will never be committed to the repository.
 
 ---
 
@@ -238,7 +220,6 @@ Click **"Save and Continue"**
 
 2. **Open your browser** and go to: `http://localhost:5173`
 
-> 📷 **[Screenshot: Login/Register page]**
 
 ---
 
@@ -253,7 +234,6 @@ Click **"Save and Continue"**
 
 You'll be automatically logged in.
 
-> 📷 **[Screenshot: Registration form]**
 
 ---
 
@@ -261,29 +241,17 @@ You'll be automatically logged in.
 
 1. **Click on your profile picture** in the top-right corner
 2. Click **"Settings"** from the dropdown menu
-
-> 📷 **[Screenshot: User dropdown menu with Settings highlighted]**
-
 3. You'll see the **"Connected Email Accounts"** section
 4. Find the **Gmail** card
 5. Click the **"Connect Gmail"** button
-
-> 📷 **[Screenshot: Settings page with Gmail connection card]**
-
 6. **Google OAuth flow**:
    - You'll be redirected to Google
    - Select your Gmail account
    - Review the permissions (read and modify emails)
    - Click **"Continue"** or **"Allow"**
-
-> 📷 **[Screenshot: Google OAuth consent screen]**
-
 7. **Success!** You'll be redirected back to the app
    - A green notification will show: "Gmail connected successfully!"
    - The Settings page will show your connected Gmail account
-
-> 📷 **[Screenshot: Success notification and connected Gmail]**
-
 ---
 
 #### Step 9: Sync Your Emails
@@ -295,15 +263,10 @@ You'll be automatically logged in.
    - Generates summaries
    - Classifies emails (Important, Spam, Newsletter, etc.)
    - Extracts action items
-
-> 📷 **[Screenshot: Sync in progress]**
-
 3. **View your emails**:
    - Click **"Inbox"** in the left sidebar
    - You'll see your synced emails with AI summaries
    - Try different categories: Important, Spam, Newsletters, etc.
-
-> 📷 **[Screenshot: Inbox with synced emails and AI summaries]**
 
 ---
 
@@ -386,38 +349,6 @@ Your Gmail is now connected and AI-powered! You can:
    # Or on Windows
    type nul > email-helper-worker\.dev.vars
    ```
-
----
-
-## 🔒 Security Best Practices
-
-- ✅ **Never commit** `.dev.vars` to Git (it's in `.gitignore`)
-- ✅ **Don't share** your Client Secret publicly
-- ✅ **Use Cloudflare Secrets** for production deployment
-- ✅ **Rotate credentials** if they're ever exposed
-- ✅ **Limit OAuth scopes** to only what's needed (already configured)
-
----
-
----
-
-### Deployment
-
-```bash
-# Deploy to Cloudflare
-npm run deploy
-
-# Or deploy individually:
-npm run deploy:worker
-npm run deploy:ui
-```
-
-**For production**: Use Cloudflare Secrets instead of environment variables:
-```bash
-npx wrangler secret put GMAIL_CLIENT_SECRET
-# Prompted to enter the secret value
-```
-
 ---
 
 ## Acknowledgments
