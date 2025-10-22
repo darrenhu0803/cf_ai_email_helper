@@ -13,12 +13,12 @@ AI Email Helper leverages Cloudflare's serverless platform to provide intelligen
 
 ### Key Features
 
-- ** AI-Powered Summarization** - Automatic email summaries using Llama 3.1
-- ** Smart Classification** - Intelligent categorization (important/spam/newsletter)
-- ** Chat Interface** - Natural language queries and email management
-- ** Real-time Updates** - WebSocket notifications for instant email alerts
-- ** Automatic Filtering** - ML-based spam and unwanted email detection
-- ** Secure & Private** - Data stored in isolated Durable Objects
+- **AI-Powered Summarization** - Automatic email summaries using Llama 3.1
+- **Smart Classification** - Intelligent categorization (important/spam/newsletter)
+- **Chat Interface** - Natural language queries and email management
+- **Real-time Updates** - WebSocket notifications for instant email alerts
+- **Automatic Filtering** - ML-based spam and unwanted email detection
+- **Secure & Private** - Data stored in isolated Durable Objects
 
 
 ---
